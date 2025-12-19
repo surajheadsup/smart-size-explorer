@@ -3,7 +3,7 @@
   "displayName": "Smart Size Explorer",
   "icon": "icon.png",
   "description": "Explore file and folder sizes in your workspace with live updates, caching, and smart sorting.",
-  "version": "1.3.7",
+  "version": "1.3.8",
   "publisher": "sk2you",
   "license": "MIT",
   "repository": {
