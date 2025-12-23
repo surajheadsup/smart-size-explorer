@@ -10,11 +10,36 @@ class SizeItem extends vscode.TreeItem {
     label: string,
     uri: vscode.Uri,
     size: number,
-    collapsible: vscode.TreeItemCollapsibleState
+    collapsible: vscode.TreeItemCollapsibleState,
+    isDirectory: boolean
   ) {
     super(label, collapsible)
     this.resourceUri = uri
     this.description = formatSize(size)
+    this.tooltip = `${label}\nSize: ${formatSize(size)}`
+
+    if (isDirectory) {
+      this.iconPath = new vscode.ThemeIcon(
+        "folder",
+        this.getSizeColor(size)
+      )
+    } else {
+      this.iconPath = new vscode.ThemeIcon(
+        "file",
+        this.getSizeColor(size)
+      )
+    }
+
+    this.contextValue = isDirectory ? "folder" : "file"
+  }
+
+  private getSizeColor(bytes: number): vscode.ThemeColor {
+    const mb = bytes / (1024 * 1024)
+
+    if (mb >= 100) return new vscode.ThemeColor("errorForeground")
+    if (mb >= 10) return new vscode.ThemeColor("editorWarning.foreground")
+    if (mb >= 1) return new vscode.ThemeColor("charts.yellow")
+    return new vscode.ThemeColor("foreground")
   }
 }
 
@@ -44,7 +69,8 @@ export class SizeTreeProvider
       const full = path.join(root, name)
       try {
         const stat = await fs.lstat(full)
-        const size = stat.isDirectory()
+        const isDirectory = stat.isDirectory()
+        const size = isDirectory
           ? await SizeService.folderSize(full)
           : stat.size
 
@@ -53,9 +79,10 @@ export class SizeTreeProvider
             name,
             vscode.Uri.file(full),
             size,
-            stat.isDirectory()
+            isDirectory
               ? vscode.TreeItemCollapsibleState.Collapsed
-              : vscode.TreeItemCollapsibleState.None
+              : vscode.TreeItemCollapsibleState.None,
+            isDirectory
           )
         )
       } catch {}

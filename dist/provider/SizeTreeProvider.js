@@ -41,10 +41,28 @@ const format_1 = require("../utils/format");
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs/promises"));
 class SizeItem extends vscode.TreeItem {
-    constructor(label, uri, size, collapsible) {
+    constructor(label, uri, size, collapsible, isDirectory) {
         super(label, collapsible);
         this.resourceUri = uri;
         this.description = (0, format_1.formatSize)(size);
+        this.tooltip = `${label}\nSize: ${(0, format_1.formatSize)(size)}`;
+        if (isDirectory) {
+            this.iconPath = new vscode.ThemeIcon("folder", this.getSizeColor(size));
+        }
+        else {
+            this.iconPath = new vscode.ThemeIcon("file", this.getSizeColor(size));
+        }
+        this.contextValue = isDirectory ? "folder" : "file";
+    }
+    getSizeColor(bytes) {
+        const mb = bytes / (1024 * 1024);
+        if (mb >= 100)
+            return new vscode.ThemeColor("errorForeground");
+        if (mb >= 10)
+            return new vscode.ThemeColor("editorWarning.foreground");
+        if (mb >= 1)
+            return new vscode.ThemeColor("charts.yellow");
+        return new vscode.ThemeColor("foreground");
     }
 }
 class SizeTreeProvider {
@@ -69,12 +87,13 @@ class SizeTreeProvider {
             const full = path.join(root, name);
             try {
                 const stat = await fs.lstat(full);
-                const size = stat.isDirectory()
+                const isDirectory = stat.isDirectory();
+                const size = isDirectory
                     ? await SizeService_1.SizeService.folderSize(full)
                     : stat.size;
-                result.push(new SizeItem(name, vscode.Uri.file(full), size, stat.isDirectory()
+                result.push(new SizeItem(name, vscode.Uri.file(full), size, isDirectory
                     ? vscode.TreeItemCollapsibleState.Collapsed
-                    : vscode.TreeItemCollapsibleState.None));
+                    : vscode.TreeItemCollapsibleState.None, isDirectory));
             }
             catch { }
         }

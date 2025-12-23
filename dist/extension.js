@@ -37,9 +37,24 @@ exports.activate = activate;
 exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const SizeTreeProvider_1 = require("./provider/SizeTreeProvider");
+const SizeDecorationProvider_1 = require("./provider/SizeDecorationProvider");
+const StatusBarProvider_1 = require("./provider/StatusBarProvider");
 function activate(ctx) {
-    const provider = new SizeTreeProvider_1.SizeTreeProvider();
-    ctx.subscriptions.push(vscode.window.registerTreeDataProvider("smartSizeExplorer", provider));
-    provider.registerWatchers(ctx);
+    const treeProvider = new SizeTreeProvider_1.SizeTreeProvider();
+    const decorationProvider = new SizeDecorationProvider_1.SizeDecorationProvider();
+    const statusBarProvider = new StatusBarProvider_1.StatusBarProvider();
+    ctx.subscriptions.push(vscode.window.registerTreeDataProvider("smartSizeExplorer", treeProvider));
+    ctx.subscriptions.push(vscode.window.registerFileDecorationProvider(decorationProvider));
+    statusBarProvider.activate(ctx);
+    treeProvider.registerWatchers(ctx);
+    ctx.subscriptions.push(vscode.workspace.createFileSystemWatcher("**/*").onDidChange(() => {
+        decorationProvider.refresh();
+    }));
+    ctx.subscriptions.push(vscode.workspace.createFileSystemWatcher("**/*").onDidCreate(() => {
+        decorationProvider.refresh();
+    }));
+    ctx.subscriptions.push(vscode.workspace.createFileSystemWatcher("**/*").onDidDelete(() => {
+        decorationProvider.refresh();
+    }));
 }
 function deactivate() { }

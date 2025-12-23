@@ -17,7 +17,7 @@
     "Visualization"
   ],
   "activationEvents": [
-    "onView:smartSizeExplorer"
+    "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "contributes": {

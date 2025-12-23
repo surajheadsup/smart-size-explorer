@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+set -e
+
+# ---------------- CONFIG ----------------
+PUBLISHER="sk2you"
+EXTENSION_NAME="smart-size-explorer"
+DATE=$(date +"%Y-%m-%d")
+
+# ---------------- CHECKS ----------------
+if ! command -v jq >/dev/null; then
+  echo "❌ jq is required (brew install jq / apt install jq)"
+  exit 1
+fi
+
+if [ -z "$OVSX_PAT" ]; then
+  echo "❌ OVSX_PAT environment variable not set"
+  exit 1
+fi
+
+if [ -n "$(git status --porcelain)" ]; then
+  echo "❌ Git working tree not clean"
+  exit 1
+fi
+
+# ---------------- VERSION BUMP ----------------
+CURRENT_VERSION=$(jq -r '.version' package.json)
+IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+
+echo "🔼 Version: $CURRENT_VERSION → $NEW_VERSION"
+
+jq ".version = \"$NEW_VERSION\"" package.json > package.tmp.json
+mv package.tmp.json package.json
+
+# ---------------- CHANGELOG UPDATE ----------------
+echo "📝 Updating CHANGELOG.md"
+
+awk -v ver="$NEW_VERSION" -v date="$DATE" '
+BEGIN { inserted=0 }
+/^## \[Unreleased\]/ {
+  print
+  print ""
+  print "## [" ver "] - " date
+  print ""
+  print "### Added"
+  print "- Performance improvements and stability fixes"
+  print ""
+  print "### Changed"
+  print "- Internal refactoring and minor enhancements"
+  print ""
+  inserted=1
+  next
+}
+{ print }
+END {
+  if (!inserted) {
+    print "❌ ERROR: [Unreleased] section not found in CHANGELOG.md" > "/dev/stderr"
+    exit 1
+  }
+}
+' CHANGELOG.md > CHANGELOG.tmp.md
+
+mv CHANGELOG.tmp.md CHANGELOG.md
+
+# ---------------- BUILD ----------------
+npm run build
+
+# ---------------- COMMIT & TAG ----------------
+git add package.json CHANGELOG.md
+git commit -m "release: v$NEW_VERSION"
+git tag "v$NEW_VERSION"
+git push origin main --tags
+
+# ---------------- PUBLISH ----------------
+echo "🚀 Publishing to VS Code Marketplace"
+vsce publish
+
+echo "🚀 Publishing to Open VSX"
+ovsx publish -p "$OVSX_PAT"
+
+echo "✅ Released v$NEW_VERSION successfully"

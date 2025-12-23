@@ -8,7 +8,8 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-
+    environment: production
+    
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -27,8 +28,14 @@ jobs:
       - name: Install publishing tools
         run: npm install -g @vscode/vsce ovsx
 
+      # ✅ SAFE DEBUG (remove later if you want)
+      - name: Verify secrets are present
+        run: |
+          if [ -z "${{ secrets.VSCE_PAT }}" ]; then echo "❌ VSCE_PAT is EMPTY"; else echo "✅ VSCE_PAT is SET"; fi
+          if [ -z "${{ secrets.OVSX_PAT }}" ]; then echo "❌ OVSX_PAT is EMPTY"; else echo "✅ OVSX_PAT is SET"; fi
+
       - name: Publish to VS Code Marketplace
-        run: vsce publish --pat ${{ secrets.VSCE_PAT }}
+        run: vsce publish --pat "${{ secrets.VSCE_PAT }}"
 
       - name: Publish to Open VSX
-        run: ovsx publish -p ${{ secrets.OVSX_PAT }}
+        run: ovsx publish -p "${{ secrets.OVSX_PAT }}"
