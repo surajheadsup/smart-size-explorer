@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out/
+
+# VS Code extension packaging
+*.vsix
+
+# Environment files
+.env
+.env.*
+.env.local
+.env.*.local
+
+# Release and deployment scripts
+release.sh
+deploy.sh
+publish.sh
+
+# Credentials and secrets
+*.pem
+*.key
+*.cert
+*.p12
+secrets/
+credentials/
+.npmrc
+.yarnrc
+auth.json
+config.local.*
+.vscode-test/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+*.tmp.*
+*.temp
+CHANGELOG.tmp.md
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+*~
+
+# Test coverage
+coverage/
+.nyc_output/
