@@ -11,12 +11,21 @@ class SizeItem extends vscode.TreeItem {
     uri: vscode.Uri,
     size: number,
     collapsible: vscode.TreeItemCollapsibleState,
-    isDirectory: boolean
+    isDirectory: boolean,
+    fileCount?: number,
+    folderCount?: number
   ) {
     super(label, collapsible)
     this.resourceUri = uri
-    this.description = formatSize(size)
-    this.tooltip = `${label}\nSize: ${formatSize(size)}`
+
+    if (isDirectory && fileCount !== undefined && folderCount !== undefined) {
+      const totalItems = fileCount + folderCount
+      this.description = `${formatSize(size)} • ${totalItems} items (${fileCount} files, ${folderCount} folders)`
+      this.tooltip = `${label}\nSize: ${formatSize(size)}\nFiles: ${fileCount}\nFolders: ${folderCount}\nTotal Items: ${totalItems}`
+    } else {
+      this.description = formatSize(size)
+      this.tooltip = `${label}\nSize: ${formatSize(size)}`
+    }
 
     if (isDirectory) {
       this.iconPath = new vscode.ThemeIcon(
@@ -62,31 +71,43 @@ export class SizeTreeProvider
 
     const result: SizeItem[] = []
 
-    for (const name of await fs.readdir(root)) {
-      if (name === ".git") continue
-      if (name === "node_modules" && !ConfigService.showNodeModules()) continue
+    try {
+      for (const name of await fs.readdir(root)) {
+        if (name === ".git") continue
+        if (name === "node_modules" && !ConfigService.showNodeModules()) continue
 
-      const full = path.join(root, name)
-      try {
-        const stat = await fs.lstat(full)
-        const isDirectory = stat.isDirectory()
-        const size = isDirectory
-          ? await SizeService.folderSize(full)
-          : stat.size
+        const full = path.join(root, name)
+        try {
+          const stat = await fs.lstat(full)
+          const isDirectory = stat.isDirectory()
 
-        result.push(
-          new SizeItem(
-            name,
-            vscode.Uri.file(full),
-            size,
-            isDirectory
-              ? vscode.TreeItemCollapsibleState.Collapsed
-              : vscode.TreeItemCollapsibleState.None,
-            isDirectory
-          )
-        )
-      } catch {}
-    }
+          if (isDirectory) {
+            const stats = await SizeService.folderStats(full)
+            result.push(
+              new SizeItem(
+                name,
+                vscode.Uri.file(full),
+                stats.size,
+                vscode.TreeItemCollapsibleState.Collapsed,
+                true,
+                stats.fileCount,
+                stats.folderCount
+              )
+            )
+          } else {
+            result.push(
+              new SizeItem(
+                name,
+                vscode.Uri.file(full),
+                stat.size,
+                vscode.TreeItemCollapsibleState.None,
+                false
+              )
+            )
+          }
+        } catch {}
+      }
+    } catch {}
 
     if (ConfigService.sortBySize()) {
       result.sort(

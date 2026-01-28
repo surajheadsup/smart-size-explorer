@@ -2,6 +2,7 @@ import * as vscode from "vscode"
 import * as fs from "fs/promises"
 import { SizeService } from "../services/SizeService"
 import { ConfigService } from "../services/ConfigService"
+import { FolderStats } from "../types"
 
 export class SizeDecorationProvider implements vscode.FileDecorationProvider {
   private emitter = new vscode.EventEmitter<vscode.Uri | vscode.Uri[]>()
@@ -24,11 +25,17 @@ export class SizeDecorationProvider implements vscode.FileDecorationProvider {
       const stat = await fs.lstat(uri.fsPath)
 
       let size: number
+      let fileCount: number | undefined
+      let folderCount: number | undefined
+
       if (stat.isDirectory()) {
-        size = await Promise.race([
-          SizeService.folderSize(uri.fsPath, false),
-          new Promise<number>((resolve) => setTimeout(() => resolve(0), 3000))
+        const stats = await Promise.race([
+          SizeService.folderStats(uri.fsPath, false),
+          new Promise<FolderStats>((resolve) => setTimeout(() => resolve({ size: 0, fileCount: 0, folderCount: 0 }), 3000))
         ])
+        size = stats.size
+        fileCount = stats.fileCount
+        folderCount = stats.folderCount
       } else {
         size = stat.size
       }
@@ -39,12 +46,18 @@ export class SizeDecorationProvider implements vscode.FileDecorationProvider {
 
       const badge = this.getSizeBadge(size)
       const color = this.getSizeColor(size)
-      const tooltip = this.formatBytes(size)
+      const sizeFormatted = this.formatBytes(size)
+
+      let tooltip = `Size: ${sizeFormatted}`
+      if (stat.isDirectory() && fileCount !== undefined && folderCount !== undefined) {
+        const totalItems = fileCount + folderCount
+        tooltip = `Size: ${sizeFormatted}\nFiles: ${fileCount}\nFolders: ${folderCount}\nTotal: ${totalItems} items`
+      }
 
       return {
         badge: badge,
         color: new vscode.ThemeColor(color),
-        tooltip: `Size: ${tooltip}`,
+        tooltip,
         propagate: false
       }
     } catch (err) {

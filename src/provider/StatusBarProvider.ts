@@ -47,14 +47,20 @@ export class StatusBarProvider {
 
     try {
       const stat = await fs.lstat(uri.fsPath)
-      const size = stat.isDirectory()
-        ? await SizeService.folderSize(uri.fsPath)
-        : stat.size
 
-      const formatted = this.formatBytes(size)
-      this.statusBarItem.text = `$(file) ${formatted}`
-      this.statusBarItem.tooltip = `File size: ${formatted}`
-      this.statusBarItem.show()
+      if (stat.isDirectory()) {
+        const stats = await SizeService.folderStats(uri.fsPath)
+        const formatted = this.formatBytes(stats.size)
+        const totalItems = stats.fileCount + stats.folderCount
+        this.statusBarItem.text = `$(folder) ${formatted} • ${totalItems} items`
+        this.statusBarItem.tooltip = `Folder size: ${formatted}\nFiles: ${stats.fileCount}\nFolders: ${stats.folderCount}\nTotal: ${totalItems} items`
+        this.statusBarItem.show()
+      } else {
+        const formatted = this.formatBytes(stat.size)
+        this.statusBarItem.text = `$(file) ${formatted}`
+        this.statusBarItem.tooltip = `File size: ${formatted}`
+        this.statusBarItem.show()
+      }
     } catch {
       this.statusBarItem.hide()
     }

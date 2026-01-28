@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -e
 
+# ---------------- LOAD ENV ----------------
+if [ -f ".env" ]; then
+  echo "📦 Loading environment variables from .env file..."
+  export $(grep -v '^#' .env | xargs)
+else
+  echo "⚠️  Warning: .env file not found. Create one from .env.example"
+  echo "   Checking environment variables..."
+fi
+
 # ---------------- CONFIG ----------------
 PUBLISHER="sk2you"
 EXTENSION_NAME="smart-size-explorer"
@@ -12,8 +21,13 @@ if ! command -v jq >/dev/null; then
   exit 1
 fi
 
+if [ -z "$VSCE_PAT" ]; then
+  echo "❌ VSCE_PAT environment variable not set (VS Code Marketplace token)"
+  exit 1
+fi
+
 if [ -z "$OVSX_PAT" ]; then
-  echo "❌ OVSX_PAT environment variable not set"
+  echo "❌ OVSX_PAT environment variable not set (Open VSX token)"
   exit 1
 fi
 
@@ -73,7 +87,7 @@ git push origin main --tags
 
 # ---------------- PUBLISH ----------------
 echo "🚀 Publishing to VS Code Marketplace"
-vsce publish
+vsce publish --pat "$VSCE_PAT"
 
 echo "🚀 Publishing to Open VSX"
 ovsx publish -p "$OVSX_PAT"
