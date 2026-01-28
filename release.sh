@@ -75,7 +75,6 @@ git add package.json CHANGELOG.md
 git commit -m "release: v$NEW_VERSION"
 git tag "v$NEW_VERSION"
 git push origin main --tags
-
 # ---------------- PUBLISH ----------------
 echo "🚀 Publishing to VS Code Marketplace"
 vsce publish --pat "$VSCE_PAT"
