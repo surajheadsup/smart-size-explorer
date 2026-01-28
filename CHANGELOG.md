@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [1.3.11] - 2026-01-28
+## [Unreleased]
 
 ### Added
 - **File and Folder Counting**: Folders now display the total number of files and subfolders

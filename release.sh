@@ -50,24 +50,15 @@ mv package.tmp.json package.json
 echo "📝 Updating CHANGELOG.md"
 
 awk -v ver="$NEW_VERSION" -v date="$DATE" '
-BEGIN { inserted=0 }
+BEGIN { replaced=0 }
 /^## \[Unreleased\]/ {
-  print
-  print ""
   print "## [" ver "] - " date
-  print ""
-  print "### Added"
-  print "- Performance improvements and stability fixes"
-  print ""
-  print "### Changed"
-  print "- Internal refactoring and minor enhancements"
-  print ""
-  inserted=1
+  replaced=1
   next
 }
 { print }
 END {
-  if (!inserted) {
+  if (!replaced) {
     print "❌ ERROR: [Unreleased] section not found in CHANGELOG.md" > "/dev/stderr"
     exit 1
   }
