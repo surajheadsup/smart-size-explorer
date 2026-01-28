@@ -13,11 +13,7 @@ out/
 .env.*
 .env.local
 .env.*.local
-
-# Release and deployment scripts
-release.sh
-deploy.sh
-publish.sh
+!.env.example
 
 # Credentials and secrets
 *.pem
